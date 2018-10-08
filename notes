@@ -1,0 +1,4 @@
+https://www.analyticsvidhya.com/blog/2017/01/scala/
+
+spark-shell -i file.scala
+:load PATH_TO_FILE
