@@ -68,21 +68,6 @@ object SparkPageRank {
     }.distinct().groupByKey().cache()
     var ranks = links.mapValues(v => 1.0)
 
-    val linesIndex = spark.read.textFile(args(2)).rdd
-    val index = linesIndex.map{ s =>
-      val parts = s.split("\\s+")
-      (parts(0))
-    }.distinct().cache()
-    val outputTest = index.collect()
-    outputTest.foreach(string => println(string))
-    val outputTest2 = relations.collect()
-    outputTest2.foreach(tup => println(s"${tup._1} :  ${tup._2} ."))
-	/*
-    val links = relations.map( s =>
-      index(s.toInt)
-    )
-	*/
-
     for (i <- 1 to iters) {
       val contribs = links.join(ranks).values.flatMap{ case (urls, rank) =>
         val size = urls.size
@@ -98,5 +83,3 @@ object SparkPageRank {
   }
 }
 // scalastyle:on println
-//SparkPageRank.main(Array("testPageRank.txt"))
-
