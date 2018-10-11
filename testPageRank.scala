@@ -74,14 +74,7 @@ object SparkPageRank {
       (parts(0))
     }.distinct().cache()
     val outputTest = index.collect()
-    outputTest.foreach(string => println(string))
-    val outputTest2 = relations.collect()
-    outputTest2.foreach(tup => println(s"${tup._1} :  ${tup._2} ."))
-	/*
-    val links = relations.map( s =>
-      index(s.toInt)
-    )
-	*/
+    //outputTest.foreach(string => println(string))
 
     for (i <- 1 to iters) {
       val contribs = links.join(ranks).values.flatMap{ case (urls, rank) =>
@@ -92,7 +85,9 @@ object SparkPageRank {
     }
 
     val output = ranks.collect()
-    output.foreach(tup => println(s"${tup._1} has rank:  ${tup._2} ."))
+    output.foreach{
+		tup => val element = outputTest(tup._1.toInt) ; println(element + s" has rank:  ${tup._2}.")
+	}
 
     spark.stop()
   }
