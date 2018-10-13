@@ -1,23 +1,3 @@
-/*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-// scalastyle:off println
-//package org.apache.spark.examples
-
 import org.apache.spark.sql.SparkSession
 
 /**
@@ -28,54 +8,43 @@ import org.apache.spark.sql.SparkSession
  * URL         neighbor URL
  * ...
  * where URL and their neighbors are separated by space(s).
- *
- * This is an example implementation for learning how to use Spark. For more conventional use,
- * please refer to org.apache.spark.graphx.lib.PageRank
- *
- * Example Usage:
- * {{{
- * bin/run-example SparkPageRank data/mllib/pagerank_data.txt 10
- * }}}
- */
-object SparkPageRank {
+**/
 
-  def showWarning() {
-    System.err.println(
-      """WARN: This is a naive implementation of PageRank and is given as an example!
-        |Please use the PageRank implementation found in org.apache.spark.graphx.lib.PageRank
-        |for more conventional use.
-      """.stripMargin)
-  }
+object SparkPageRank {
 
   def main(args: Array[String]) {
     if (args.length < 1) {
-      System.err.println("Usage: SparkPageRank <file> <iter>")
+      System.err.println("Usage: SparkPageRank <file> <file> <iter>")
       System.exit(1)
     }
-
-    showWarning()
 
     val spark = SparkSession
       .builder
       .appName("SparkPageRank")
       .getOrCreate()
+	
+	//Iterations number
+    val iters = if (args.length > 1) args(2).toInt else 10
 
-    val iters = if (args.length > 1) args(1).toInt else 10
+	//Get the links between each element
     val lines = spark.read.textFile(args(0)).rdd
     val links = lines.map{ s =>
       val parts = s.split("\\s+")
       (parts(0), parts(1))
     }.distinct().groupByKey().cache()
-    var ranks = links.mapValues(v => 1.0)
 
-    val linesIndex = spark.read.textFile(args(2)).rdd
+	//Get the URLs
+    val linesIndex = spark.read.textFile(args(1)).rdd
     val index = linesIndex.map{ s =>
       val parts = s.split("\\s+")
       (parts(0))
     }.distinct().cache()
-    val outputTest = index.collect()
-    //outputTest.foreach(string => println(string))
+    val URLs = index.collect()
 
+	//Assign 1.0 weight to each value
+    var ranks = links.mapValues(v => 1.0)
+
+	//Compute the new ranks
     for (i <- 1 to iters) {
       val contribs = links.join(ranks).values.flatMap{ case (urls, rank) =>
         val size = urls.size
@@ -84,14 +53,17 @@ object SparkPageRank {
       ranks = contribs.reduceByKey(_ + _).mapValues(0.15 + 0.85 * _)
     }
 
+	//Display the results
     val output = ranks.collect()
+
     output.foreach{
-		tup => val element = outputTest(tup._1.toInt) ; println(element + s" has rank:  ${tup._2}.")
+		tup =>
+		val element = URLs(tup._1.toInt)
+		println(element + s" has rank:  ${tup._2}.")
 	}
 
     spark.stop()
   }
 }
-// scalastyle:on println
-//SparkPageRank.main(Array("testPageRank.txt"))
+//SparkPageRank.main(Array("example_arcs", "example_index","10"))
 
